@@ -1,7 +1,14 @@
+// backend/src/routes/lookup/materials.js
+const db = require('../../db/models')
+router.get('/', async (req, res) => {
+  const all = await db.Material.findAll()
+  res.json(all)
+})
+
 const express = require('express');
 
-const Hardware_fastenersService = require('../services/hardware_fasteners');
-const Hardware_fastenersDBApi = require('../db/api/hardware_fasteners');
+const MaterialsService = require('../services/materials');
+const MaterialsDBApi = require('../db/api/materials');
 const wrapAsync = require('../helpers').wrapAsync;
 
 const config = require('../config');
@@ -12,13 +19,13 @@ const { parse } = require('json2csv');
 
 const { checkCrudPermissions } = require('../middlewares/check-permissions');
 
-router.use(checkCrudPermissions('hardware_fasteners'));
+router.use(checkCrudPermissions('materials'));
 
 /**
  *  @swagger
  *  components:
  *    schemas:
- *      Hardware_fasteners:
+ *      Materials:
  *        type: object
  *        properties:
 
@@ -28,31 +35,33 @@ router.use(checkCrudPermissions('hardware_fasteners'));
  *          description:
  *            type: string
  *            default: description
+ *          mechanical_properties:
+ *            type: string
+ *            default: mechanical_properties
 
- *          diameter:
+ *          nominal_size:
  *            type: integer
  *            format: int64
- *          length:
+ *          actual_size:
  *            type: integer
  *            format: int64
 
- *          
  */
 
 /**
  *  @swagger
  * tags:
- *   name: Hardware_fasteners
- *   description: The Hardware_fasteners managing API
+ *   name: Materials
+ *   description: The Materials managing API
  */
 
 /**
  *  @swagger
- *  /api/hardware_fasteners:
+ *  /api/materials:
  *    post:
  *      security:
  *        - bearerAuth: []
- *      tags: [Hardware_fasteners]
+ *      tags: [Materials]
  *      summary: Add new item
  *      description: Add new item
  *      requestBody:
@@ -64,14 +73,14 @@ router.use(checkCrudPermissions('hardware_fasteners'));
  *                data:
  *                  description: Data of the updated item
  *                  type: object
- *                  $ref: "#/components/schemas/Hardware_fasteners"
+ *                  $ref: "#/components/schemas/Materials"
  *      responses:
  *        200:
  *          description: The item was successfully added
  *          content:
  *            application/json:
  *              schema:
- *                $ref: "#/components/schemas/Hardware_fasteners"
+ *                $ref: "#/components/schemas/Materials"
  *        401:
  *          $ref: "#/components/responses/UnauthorizedError"
  *        405:
@@ -86,7 +95,7 @@ router.post(
       req.headers.referer ||
       `${req.protocol}://${req.hostname}${req.originalUrl}`;
     const link = new URL(referer);
-    await Hardware_fastenersService.create(
+    await MaterialsService.create(
       req.body.data,
       req.currentUser,
       true,
@@ -103,7 +112,7 @@ router.post(
  *  post:
  *    security:
  *      - bearerAuth: []
- *    tags: [Hardware_fasteners]
+ *    tags: [Materials]
  *    summary: Bulk import items
  *    description: Bulk import items
  *    requestBody:
@@ -116,14 +125,14 @@ router.post(
  *              description: Data of the updated items
  *              type: array
  *              items:
- *                $ref: "#/components/schemas/Hardware_fasteners"
+ *                $ref: "#/components/schemas/Materials"
  *    responses:
  *      200:
  *        description: The items were successfully imported
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/Hardware_fasteners"
+ *          $ref: "#/components/schemas/Materials"
  *      401:
  *        $ref: "#/components/responses/UnauthorizedError"
  *      405:
@@ -139,7 +148,7 @@ router.post(
       req.headers.referer ||
       `${req.protocol}://${req.hostname}${req.originalUrl}`;
     const link = new URL(referer);
-    await Hardware_fastenersService.bulkImport(req, res, true, link.host);
+    await MaterialsService.bulkImport(req, res, true, link.host);
     const payload = true;
     res.status(200).send(payload);
   }),
@@ -147,11 +156,11 @@ router.post(
 
 /**
  *  @swagger
- *  /api/hardware_fasteners/{id}:
+ *  /api/materials/{id}:
  *    put:
  *      security:
  *        - bearerAuth: []
- *      tags: [Hardware_fasteners]
+ *      tags: [Materials]
  *      summary: Update the data of the selected item
  *      description: Update the data of the selected item
  *      parameters:
@@ -174,7 +183,7 @@ router.post(
  *                data:
  *                  description: Data of the updated item
  *                  type: object
- *                  $ref: "#/components/schemas/Hardware_fasteners"
+ *                  $ref: "#/components/schemas/Materials"
  *              required:
  *                - id
  *      responses:
@@ -183,7 +192,7 @@ router.post(
  *          content:
  *            application/json:
  *              schema:
- *                $ref: "#/components/schemas/Hardware_fasteners"
+ *                $ref: "#/components/schemas/Materials"
  *        400:
  *          description: Invalid ID supplied
  *        401:
@@ -196,11 +205,7 @@ router.post(
 router.put(
   '/:id',
   wrapAsync(async (req, res) => {
-    await Hardware_fastenersService.update(
-      req.body.data,
-      req.body.id,
-      req.currentUser,
-    );
+    await MaterialsService.update(req.body.data, req.body.id, req.currentUser);
     const payload = true;
     res.status(200).send(payload);
   }),
@@ -208,11 +213,11 @@ router.put(
 
 /**
  * @swagger
- *  /api/hardware_fasteners/{id}:
+ *  /api/materials/{id}:
  *    delete:
  *      security:
  *        - bearerAuth: []
- *      tags: [Hardware_fasteners]
+ *      tags: [Materials]
  *      summary: Delete the selected item
  *      description: Delete the selected item
  *      parameters:
@@ -228,7 +233,7 @@ router.put(
  *          content:
  *            application/json:
  *              schema:
- *                $ref: "#/components/schemas/Hardware_fasteners"
+ *                $ref: "#/components/schemas/Materials"
  *        400:
  *          description: Invalid ID supplied
  *        401:
@@ -241,7 +246,7 @@ router.put(
 router.delete(
   '/:id',
   wrapAsync(async (req, res) => {
-    await Hardware_fastenersService.remove(req.params.id, req.currentUser);
+    await MaterialsService.remove(req.params.id, req.currentUser);
     const payload = true;
     res.status(200).send(payload);
   }),
@@ -249,11 +254,11 @@ router.delete(
 
 /**
  *  @swagger
- *  /api/hardware_fasteners/deleteByIds:
+ *  /api/materials/deleteByIds:
  *    post:
  *      security:
  *        - bearerAuth: []
- *      tags: [Hardware_fasteners]
+ *      tags: [Materials]
  *      summary: Delete the selected item list
  *      description: Delete the selected item list
  *      requestBody:
@@ -271,7 +276,7 @@ router.delete(
  *          content:
  *            application/json:
  *              schema:
- *                $ref: "#/components/schemas/Hardware_fasteners"
+ *                $ref: "#/components/schemas/Materials"
  *        401:
  *          $ref: "#/components/responses/UnauthorizedError"
  *        404:
@@ -282,7 +287,7 @@ router.delete(
 router.post(
   '/deleteByIds',
   wrapAsync(async (req, res) => {
-    await Hardware_fastenersService.deleteByIds(req.body.data, req.currentUser);
+    await MaterialsService.deleteByIds(req.body.data, req.currentUser);
     const payload = true;
     res.status(200).send(payload);
   }),
@@ -290,22 +295,22 @@ router.post(
 
 /**
  *  @swagger
- *  /api/hardware_fasteners:
+ *  /api/materials:
  *    get:
  *      security:
  *        - bearerAuth: []
- *      tags: [Hardware_fasteners]
- *      summary: Get all hardware_fasteners
- *      description: Get all hardware_fasteners
+ *      tags: [Materials]
+ *      summary: Get all materials
+ *      description: Get all materials
  *      responses:
  *        200:
- *          description: Hardware_fasteners list successfully received
+ *          description: Materials list successfully received
  *          content:
  *            application/json:
  *              schema:
  *                type: array
  *                items:
- *                  $ref: "#/components/schemas/Hardware_fasteners"
+ *                  $ref: "#/components/schemas/Materials"
  *        401:
  *          $ref: "#/components/responses/UnauthorizedError"
  *        404:
@@ -321,13 +326,19 @@ router.get(
     const globalAccess = req.currentUser.app_role.globalAccess;
 
     const currentUser = req.currentUser;
-    const payload = await Hardware_fastenersDBApi.findAll(
-      req.query,
-      globalAccess,
-      { currentUser },
-    );
+    const payload = await MaterialsDBApi.findAll(req.query, globalAccess, {
+      currentUser,
+    });
     if (filetype && filetype === 'csv') {
-      const fields = ['id', 'name', 'description', 'diameter', 'length'];
+      const fields = [
+        'id',
+        'name',
+        'description',
+        'mechanical_properties',
+
+        'nominal_size',
+        'actual_size',
+      ];
       const opts = { fields };
       try {
         const csv = parse(payload.rows, opts);
@@ -344,22 +355,22 @@ router.get(
 
 /**
  *  @swagger
- *  /api/hardware_fasteners/count:
+ *  /api/materials/count:
  *    get:
  *      security:
  *        - bearerAuth: []
- *      tags: [Hardware_fasteners]
- *      summary: Count all hardware_fasteners
- *      description: Count all hardware_fasteners
+ *      tags: [Materials]
+ *      summary: Count all materials
+ *      description: Count all materials
  *      responses:
  *        200:
- *          description: Hardware_fasteners count successfully received
+ *          description: Materials count successfully received
  *          content:
  *            application/json:
  *              schema:
  *                type: array
  *                items:
- *                  $ref: "#/components/schemas/Hardware_fasteners"
+ *                  $ref: "#/components/schemas/Materials"
  *        401:
  *          $ref: "#/components/responses/UnauthorizedError"
  *        404:
@@ -373,11 +384,10 @@ router.get(
     const globalAccess = req.currentUser.app_role.globalAccess;
 
     const currentUser = req.currentUser;
-    const payload = await Hardware_fastenersDBApi.findAll(
-      req.query,
-      globalAccess,
-      { countOnly: true, currentUser },
-    );
+    const payload = await MaterialsDBApi.findAll(req.query, globalAccess, {
+      countOnly: true,
+      currentUser,
+    });
 
     res.status(200).send(payload);
   }),
@@ -385,22 +395,22 @@ router.get(
 
 /**
  *  @swagger
- *  /api/hardware_fasteners/autocomplete:
+ *  /api/materials/autocomplete:
  *    get:
  *      security:
  *        - bearerAuth: []
- *      tags: [Hardware_fasteners]
- *      summary: Find all hardware_fasteners that match search criteria
- *      description: Find all hardware_fasteners that match search criteria
+ *      tags: [Materials]
+ *      summary: Find all materials that match search criteria
+ *      description: Find all materials that match search criteria
  *      responses:
  *        200:
- *          description: Hardware_fasteners list successfully received
+ *          description: Materials list successfully received
  *          content:
  *            application/json:
  *              schema:
  *                type: array
  *                items:
- *                  $ref: "#/components/schemas/Hardware_fasteners"
+ *                  $ref: "#/components/schemas/Materials"
  *        401:
  *          $ref: "#/components/responses/UnauthorizedError"
  *        404:
@@ -413,7 +423,7 @@ router.get('/autocomplete', async (req, res) => {
 
   const organizationId = req.currentUser.organization?.id;
 
-  const payload = await Hardware_fastenersDBApi.findAllAutocomplete(
+  const payload = await MaterialsDBApi.findAllAutocomplete(
     req.query.query,
     req.query.limit,
     req.query.offset,
@@ -426,11 +436,11 @@ router.get('/autocomplete', async (req, res) => {
 
 /**
  * @swagger
- *  /api/hardware_fasteners/{id}:
+ *  /api/materials/{id}:
  *    get:
  *      security:
  *        - bearerAuth: []
- *      tags: [Hardware_fasteners]
+ *      tags: [Materials]
  *      summary: Get selected item
  *      description: Get selected item
  *      parameters:
@@ -446,7 +456,7 @@ router.get('/autocomplete', async (req, res) => {
  *          content:
  *            application/json:
  *              schema:
- *                $ref: "#/components/schemas/Hardware_fasteners"
+ *                $ref: "#/components/schemas/Materials"
  *        400:
  *          description: Invalid ID supplied
  *        401:
@@ -459,7 +469,7 @@ router.get('/autocomplete', async (req, res) => {
 router.get(
   '/:id',
   wrapAsync(async (req, res) => {
-    const payload = await Hardware_fastenersDBApi.findBy({ id: req.params.id });
+    const payload = await MaterialsDBApi.findBy({ id: req.params.id });
 
     res.status(200).send(payload);
   }),

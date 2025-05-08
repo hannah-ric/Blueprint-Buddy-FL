@@ -1,3 +1,10 @@
+// backend/src/routes/lookup/joinery.js
+const db = require('../../db/models')
+router.get('/', async (req, res) => {
+  const all = await db.JoineryMethod.findAll()
+  res.json(all)
+})
+
 const express = require('express');
 
 const Joinery_methodsService = require('../services/joinery_methods');

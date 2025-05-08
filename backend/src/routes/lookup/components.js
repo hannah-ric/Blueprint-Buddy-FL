@@ -1,3 +1,12 @@
+// backend/src/routes/lookup/components.js
+const db = require('../../db/models')   // ← this pulls in index.js and all your models
+
+// e.g. get all components
+router.get('/', async (req, res) => {
+  const all = await db.Component.findAll()  // or db.Components, depending on how index.js names it
+  res.json(all)
+})
+
 const express = require('express');
 
 const ComponentsService = require('../services/components');
