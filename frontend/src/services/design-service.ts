@@ -28,10 +28,10 @@ export class DesignService {
 
     // 1) Fetch lookup data in parallel
     const [components, materials, joinery, hardware] = await Promise.all([
-      Database.getAll('/components'),
-      Database.getAll('/materials'),
-      Database.getAll('/joinery'),
-      Database.getAll('/hardware'),
+      Database.getAll('components'),
+      Database.getAll('materials'),
+      Database.getAll('joinery'),
+      Database.getAll('hardware'),
     ])
 
     // 2) Build the Chat payload

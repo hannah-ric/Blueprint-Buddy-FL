@@ -1,7 +1,6 @@
 // frontend/src/pages/api/lookup/components.ts
 import type { NextApiRequest, NextApiResponse } from 'next'
-
-// Adjust the number of "../" so this points at your backend/src/db/models/index.js
+// 5×“..” to back out of lookup → api → pages → src → frontend, then into backend/src/db/models
 const db = require('../../../../../backend/src/db/models')
 
 export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
